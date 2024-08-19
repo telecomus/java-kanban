@@ -1,3 +1,4 @@
+package tracker.model;
 import java.util.Objects;
 public class Task {
 

@@ -1,4 +1,9 @@
+package tracker.controllers;
 import java.util.*;
+import tracker.model.Task;
+import tracker.model.Epic;
+import tracker.model.Subtask;
+import tracker.model.Status;
 
 public class TaskManager {
 
@@ -151,24 +156,22 @@ public class TaskManager {
         updateEpicStatus(epic);
     }
     private void updateEpicStatus(Epic epic) {
-        int allIsDoneCount = 0;
-        int allIsInNewCount = 0;
-        ArrayList<Subtask> list = epic.getSubtaskList();
+        ArrayList<Subtask> subtasks = epic.getSubtaskList();
+        int doneCount = 0;
 
-        for (Subtask subtask : list) {
-            if (subtask.getStatus() == Status.DONE) {
-                allIsDoneCount++;
-            }
-            if (subtask.getStatus() == Status.NEW) {
-                allIsInNewCount++;
+        for (Subtask subtask : subtasks) {
+            if (subtask.getStatus() == Status.IN_PROGRESS) {
+                epic.setStatus(Status.IN_PROGRESS);
+                return;
+            } else if (subtask.getStatus() == Status.DONE) {
+                doneCount++;
             }
         }
-        if (allIsDoneCount == list.size()) {
+
+        if (doneCount == subtasks.size()) {
             epic.setStatus(Status.DONE);
-        } else if (allIsInNewCount == list.size()) {
-            epic.setStatus(Status.NEW);
         } else {
-            epic.setStatus(Status.IN_PROGRESS);
+            epic.setStatus(Status.NEW);
         }
     }
 }

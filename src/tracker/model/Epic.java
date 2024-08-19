@@ -1,14 +1,16 @@
-import java.util.ArrayList;
-public class Epic extends Task {
+package tracker.model;
 
+import java.util.ArrayList;
+
+public class Epic extends Task {
     private ArrayList<Subtask> subtaskList = new ArrayList<>();
 
     public Epic(String name, String description) {
         super(name, description);
     }
 
-    public Epic(int id, String name, String description, Status status) {
-        super(id, name, description, status);
+    public Epic(int id, String name, String description) {
+        super(id, name, description, Status.NEW);
     }
 
     public void addSubtask(Subtask subtask) {
