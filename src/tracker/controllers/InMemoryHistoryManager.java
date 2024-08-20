@@ -9,8 +9,7 @@ public class InMemoryHistoryManager implements HistoryManager {
 
     @Override
     public void add(Task task) {
-        Task taskCopy = createTaskCopy(task);
-        history.add(taskCopy);
+        history.add(task);
         if (history.size() > 10) {
             history.remove(0);
         }
@@ -19,10 +18,5 @@ public class InMemoryHistoryManager implements HistoryManager {
     @Override
     public List<Task> getHistory() {
         return new ArrayList<>(history);
-    }
-
-    @Override
-    public Task createTaskCopy(Task task) {
-        return new Task(task.getName(), task.getDescription());
     }
 }

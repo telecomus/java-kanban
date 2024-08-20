@@ -1,13 +1,16 @@
 package tracker.model;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 import tracker.controllers.TaskManager;
 import tracker.controllers.Managers;
 import static org.junit.jupiter.api.Assertions.*;
 
+@DisplayName("Тесты для класса Epic")
 class EpicTest {
 
     @Test
+    @DisplayName("Равенство эпиков")
     void testEpicEquality() {
         Epic epic1 = new Epic(1, "Epic 1", "Description 1");
         Epic epic2 = new Epic(1, "Epic 1", "Description 1");
@@ -15,6 +18,7 @@ class EpicTest {
     }
 
     @Test
+    @DisplayName("Подзадачи эпика")
     void testEpicSubtasks() {
         TaskManager taskManager = Managers.getDefault();
         Epic epic = new Epic("Epic", "Description");
@@ -32,6 +36,7 @@ class EpicTest {
     }
 
     @Test
+    @DisplayName("Статус эпика")
     void testEpicStatus() {
         TaskManager taskManager = Managers.getDefault();
         Epic epic = new Epic("Epic", "Description");

@@ -1,11 +1,15 @@
 package tracker.model;
 import tracker.controllers.TaskManager;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 import static org.junit.jupiter.api.Assertions.*;
 import tracker.controllers.Managers;
+
+@DisplayName("Тесты для класса Task")
 class TaskTest {
 
     @Test
+    @DisplayName("Равенство задач")
     void testTaskEquality() {
         Task task1 = new Task(1, "Task 1", "Description 1", Status.NEW);
         Task task2 = new Task(1, "Task 1", "Description 1", Status.NEW);
@@ -13,6 +17,7 @@ class TaskTest {
     }
 
     @Test
+    @DisplayName("Равенство подзадач")
     void testSubtaskEquality() {
         Subtask subtask1 = new Subtask(1, "Subtask 1", "Description 1", Status.NEW, 1);
         Subtask subtask2 = new Subtask(1, "Subtask 1", "Description 1", Status.NEW, 1);
@@ -20,6 +25,7 @@ class TaskTest {
     }
 
     @Test
+    @DisplayName("Неизменяемость задачи после добавления в менеджер")
     void testTaskImmutabilityAfterAddingToManager() {
         TaskManager taskManager = Managers.getDefault();
         Task task = new Task("Task", "Description");

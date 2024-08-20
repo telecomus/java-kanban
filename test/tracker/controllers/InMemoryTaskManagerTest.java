@@ -2,12 +2,14 @@ package tracker.controllers;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 import tracker.model.Epic;
 import tracker.model.Status;
 import tracker.model.Subtask;
 import tracker.model.Task;
 import static org.junit.jupiter.api.Assertions.*;
 
+@DisplayName("Менеджер задач в памяти")
 class InMemoryTaskManagerTest {
 
     private TaskManager taskManager;
@@ -18,6 +20,7 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
+    @DisplayName("Добавление задачи")
     void testAddTask() {
         Task task = new Task("Task", "Description");
         Task addedTask = taskManager.addTask(task);
@@ -26,6 +29,7 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
+    @DisplayName("Добавление эпика")
     void testAddEpic() {
         Epic epic = new Epic("Epic", "Description");
         Epic addedEpic = taskManager.addEpic(epic);
@@ -34,6 +38,7 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
+    @DisplayName("Добавление подзадачи")
     void testAddSubtask() {
         Epic epic = new Epic("Epic", "Description");
         Epic addedEpic = taskManager.addEpic(epic);
@@ -44,6 +49,7 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
+    @DisplayName("Задача с назначенным ID")
     void testTaskWithAssignedId() {
         Task task = new Task(1, "Task", "Description", Status.NEW);
         Task addedTask = taskManager.addTask(task);
@@ -52,6 +58,7 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
+    @DisplayName("Утилитный класс Managers")
     void testManagersUtilityClass() {
         TaskManager defaultManager = Managers.getDefault();
         assertNotNull(defaultManager, "Default task manager should be initialized");
