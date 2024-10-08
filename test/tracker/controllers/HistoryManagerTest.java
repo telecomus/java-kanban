@@ -7,7 +7,7 @@ import tracker.model.Task;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("История задач")
+@DisplayName("HistoryManager Tests")
 class HistoryManagerTest {
 
     private HistoryManager historyManager;
@@ -18,36 +18,59 @@ class HistoryManagerTest {
     }
 
     @Test
-    @DisplayName("Добавление задачи в историю")
+    @DisplayName("Add task to history")
     void testAddTaskToHistory() {
-        Task task = new Task("Задача", "Описание");
+        Task task = new Task("Task", "Description");
+        task.setId(1);
         historyManager.add(task);
         List<Task> history = historyManager.getHistory();
-        assertEquals(1, history.size(), "История должна содержать одну задачу");
-        assertEquals(task, history.get(0), "Добавленная задача должна быть в истории");
+        assertEquals(1, history.size(), "History should contain one task");
+        assertEquals(task, history.get(0), "Added task should be in history");
     }
 
     @Test
-    @DisplayName("Ограничение размера истории")
-    void testHistorySize() {
-        for (int i = 0; i < 15; i++) {
-            Task task = new Task("Задача " + i, "Описание " + i);
-            historyManager.add(task);
-        }
+    @DisplayName("Remove duplicates from history")
+    void testRemoveDuplicatesFromHistory() {
+        Task task = new Task("Task", "Description");
+        task.setId(1);
+        historyManager.add(task);
+        historyManager.add(task);
         List<Task> history = historyManager.getHistory();
-        assertEquals(10, history.size(), "Размер истории должен быть ограничен 10 задачами");
+        assertEquals(1, history.size(), "History should contain only one task");
     }
 
     @Test
-    @DisplayName("Изменяемость задачи в истории")
-    void testTaskMutabilityInHistory() {
-        Task task = new Task("Задача", "Описание");
-        historyManager.add(task);
-        task.setName("Обновленная задача");
-        task.setDescription("Обновленное описание");
+    @DisplayName("Remove task from history")
+    void testRemoveTaskFromHistory() {
+        Task task1 = new Task("Task 1", "Description 1");
+        Task task2 = new Task("Task 2", "Description 2");
+        task1.setId(1);
+        task2.setId(2);
+        historyManager.add(task1);
+        historyManager.add(task2);
+        historyManager.remove(1);
         List<Task> history = historyManager.getHistory();
-        Task taskInHistory = history.get(0);
-        assertEquals("Обновленная задача", taskInHistory.getName(), "Название задачи в истории должно измениться");
-        assertEquals("Обновленное описание", taskInHistory.getDescription(), "Описание задачи в истории должно измениться");
+        assertEquals(1, history.size(), "History should contain one task");
+        assertEquals(task2, history.get(0), "Only the second task should remain in history");
+    }
+
+    @Test
+    @DisplayName("Order of tasks in history")
+    void testHistoryOrder() {
+        Task task1 = new Task("Task 1", "Description 1");
+        Task task2 = new Task("Task 2", "Description 2");
+        Task task3 = new Task("Task 3", "Description 3");
+        task1.setId(1);
+        task2.setId(2);
+        task3.setId(3);
+        historyManager.add(task1);
+        historyManager.add(task2);
+        historyManager.add(task3);
+        historyManager.add(task1);  // Move task1 to the end
+        List<Task> history = historyManager.getHistory();
+        assertEquals(3, history.size(), "History should contain three tasks");
+        assertEquals(task2, history.get(0), "Task 2 should be first");
+        assertEquals(task3, history.get(1), "Task 3 should be second");
+        assertEquals(task1, history.get(2), "Task 1 should be last");
     }
 }

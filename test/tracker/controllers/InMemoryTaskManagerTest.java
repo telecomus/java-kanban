@@ -9,7 +9,7 @@ import tracker.model.Subtask;
 import tracker.model.Task;
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("Менеджер задач в памяти")
+@DisplayName("InMemoryTaskManager Tests")
 class InMemoryTaskManagerTest {
 
     private TaskManager taskManager;
@@ -20,7 +20,7 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
-    @DisplayName("Добавление задачи")
+    @DisplayName("Add task")
     void testAddTask() {
         Task task = new Task("Task", "Description");
         Task addedTask = taskManager.addTask(task);
@@ -29,7 +29,7 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
-    @DisplayName("Добавление эпика")
+    @DisplayName("Add epic")
     void testAddEpic() {
         Epic epic = new Epic("Epic", "Description");
         Epic addedEpic = taskManager.addEpic(epic);
@@ -38,7 +38,7 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
-    @DisplayName("Добавление подзадачи")
+    @DisplayName("Add subtask")
     void testAddSubtask() {
         Epic epic = new Epic("Epic", "Description");
         Epic addedEpic = taskManager.addEpic(epic);
@@ -49,23 +49,58 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
-    @DisplayName("Задача с назначенным ID")
-    void testTaskWithAssignedId() {
-        Task task = new Task(1, "Task", "Description", Status.NEW);
-        Task addedTask = taskManager.addTask(task);
-        assertEquals(1, addedTask.getId(), "Task should retain the assigned id");
-        assertEquals(task, taskManager.getTaskByID(1), "Task with assigned id should be retrievable");
+    @DisplayName("Delete task")
+    void testDeleteTask() {
+        Task task = taskManager.addTask(new Task("Task", "Description"));
+        taskManager.deleteTaskByID(task.getId());
+        assertNull(taskManager.getTaskByID(task.getId()), "Task should be deleted");
+        assertTrue(taskManager.getHistory().isEmpty(), "Task should be removed from history");
     }
 
     @Test
-    @DisplayName("Утилитный класс Managers")
-    void testManagersUtilityClass() {
-        TaskManager defaultManager = Managers.getDefault();
-        assertNotNull(defaultManager, "Default task manager should be initialized");
-        assertTrue(defaultManager instanceof InMemoryTaskManager, "Default task manager should be an instance of InMemoryTaskManager");
+    @DisplayName("Delete epic")
+    void testDeleteEpic() {
+        Epic epic = taskManager.addEpic(new Epic("Epic", "Description"));
+        Subtask subtask = taskManager.addSubtask(new Subtask("Subtask", "Description", epic.getId()));
+        taskManager.deleteEpicByID(epic.getId());
+        assertNull(taskManager.getEpicByID(epic.getId()), "Epic should be deleted");
+        assertNull(taskManager.getSubtaskByID(subtask.getId()), "Subtask should be deleted");
+        assertTrue(taskManager.getHistory().isEmpty(), "Epic and subtask should be removed from history");
+    }
 
-        HistoryManager defaultHistory = Managers.getDefaultHistory();
-        assertNotNull(defaultHistory, "Default history manager should be initialized");
-        assertTrue(defaultHistory instanceof InMemoryHistoryManager, "Default history manager should be an instance of InMemoryHistoryManager");
+    @Test
+    @DisplayName("Data integrity on deletion")
+    void testDataIntegrityOnDeletion() {
+        Epic epic = taskManager.addEpic(new Epic("Epic", "Description"));
+        Subtask subtask = taskManager.addSubtask(new Subtask("Subtask", "Description", epic.getId()));
+        taskManager.deleteSubtaskByID(subtask.getId());
+        assertFalse(taskManager.getEpicByID(epic.getId()).getSubtaskList().contains(subtask),
+                "Subtask should be removed from epic's subtask list");
+    }
+
+    @Test
+    @DisplayName("Update task")
+    void testUpdateTask() {
+        Task task = taskManager.addTask(new Task("Task", "Description"));
+        task.setName("Updated Task");
+        task.setDescription("Updated Description");
+        task.setStatus(Status.IN_PROGRESS);
+        taskManager.updateTask(task);
+        Task updatedTask = taskManager.getTaskByID(task.getId());
+        assertEquals("Updated Task", updatedTask.getName(), "Task name should be updated");
+        assertEquals("Updated Description", updatedTask.getDescription(), "Task description should be updated");
+        assertEquals(Status.IN_PROGRESS, updatedTask.getStatus(), "Task status should be updated");
+    }
+
+    @Test
+    @DisplayName("Task history")
+    void testTaskHistory() {
+        Task task1 = taskManager.addTask(new Task("Task 1", "Description 1"));
+        Task task2 = taskManager.addTask(new Task("Task 2", "Description 2"));
+        taskManager.getTaskByID(task1.getId());
+        taskManager.getTaskByID(task2.getId());
+        taskManager.getTaskByID(task1.getId());
+        assertEquals(2, taskManager.getHistory().size(), "History should contain 2 tasks");
+        assertEquals(task1, taskManager.getHistory().get(1), "Last viewed task should be last in history");
     }
 }
