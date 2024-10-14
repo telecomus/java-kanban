@@ -8,12 +8,10 @@ import tracker.model.Task;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
 
 public class FileBackedTaskManager extends InMemoryTaskManager {
 
-    private File file;
+    private final File file;
 
     public FileBackedTaskManager(File file) {
         super(Managers.getDefaultHistory());
