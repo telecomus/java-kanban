@@ -31,12 +31,18 @@ public class Epic extends Task {
 
     @Override
     public String toString() {
-        return "Epic{" +
-                "name= " + getName() + '\'' +
-                ", description = " + getDescription() + '\'' +
-                ", id=" + getId() +
-                ", subtaskList.size = " + subtaskList.size() +
-                ", status = " + getStatus() +
-                '}';
+        return getId() + "," + TaskType.EPIC + "," + getName() + "," + getStatus() + "," + getDescription() + ",";
+    }
+
+    public static Epic fromString(String value) {
+        String[] fields = value.split(",");
+        int id = Integer.parseInt(fields[0]);
+        String name = fields[2];
+        Status status = Status.valueOf(fields[3]);
+        String description = fields[4];
+        Epic epic = new Epic(name, description);
+        epic.setId(id);
+        epic.setStatus(status);
+        return epic;
     }
 }

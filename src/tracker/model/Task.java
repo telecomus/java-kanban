@@ -77,11 +77,18 @@ public class Task {
 
     @Override
     public String toString() {
-        return "Task{" +
-                "name='" + name + '\'' +
-                ", description='" + description + '\'' +
-                ", id=" + id +
-                ", status=" + status +
-                '}';
+        return id + "," + TaskType.TASK + "," + name + "," + status + "," + description + ",";
+    }
+
+    public static Task fromString(String value) {
+        String[] fields = value.split(",");
+        int id = Integer.parseInt(fields[0]);
+        String name = fields[2];
+        Status status = Status.valueOf(fields[3]);
+        String description = fields[4];
+        Task task = new Task(name, description);
+        task.setId(id);
+        task.setStatus(status);
+        return task;
     }
 }
