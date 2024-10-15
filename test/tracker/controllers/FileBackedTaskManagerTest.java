@@ -10,7 +10,6 @@ import tracker.model.Task;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -23,7 +22,7 @@ class FileBackedTaskManagerTest {
     @BeforeEach
     void setUp() throws IOException {
         file = File.createTempFile("tasks", ".csv");
-        manager = FileBackedTaskManager.loadFromFile(file);
+        manager = new FileBackedTaskManager(file);
     }
 
     @Test
@@ -31,6 +30,8 @@ class FileBackedTaskManagerTest {
         manager.save();
         FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(file);
         assertEquals(0, loadedManager.getTasks().size(), "Загруженный менеджер должен быть пустым");
+        assertEquals(0, loadedManager.getEpics().size(), "Загруженный менеджер должен быть пустым");
+        assertEquals(0, loadedManager.getSubtasks().size(), "Загруженный менеджер должен быть пустым");
     }
 
     @Test
@@ -38,13 +39,10 @@ class FileBackedTaskManagerTest {
         Task task = new Task("Task 1", "Description 1");
         Epic epic = new Epic("Epic 1", "Description 2");
         manager.addEpic(epic);
-
         Subtask subtask = new Subtask("Subtask 1", "Description 3", epic.getId());
 
         manager.addTask(task);
         manager.addSubtask(subtask);
-
-        manager.save();
 
         FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(file);
         assertEquals(1, loadedManager.getTasks().size(), "Загруженный менеджер должен содержать 1 задачу");
@@ -57,7 +55,6 @@ class FileBackedTaskManagerTest {
         Task task = new Task("Task 1", "Description 1");
         Epic epic = new Epic("Epic 1", "Description 2");
         manager.addEpic(epic);
-
         Subtask subtask = new Subtask("Subtask 1", "Description 3", epic.getId());
 
         manager.addTask(task);
@@ -66,8 +63,6 @@ class FileBackedTaskManagerTest {
         manager.getTaskByID(task.getId());
         manager.getEpicByID(epic.getId());
         manager.getSubtaskByID(subtask.getId());
-
-        manager.save();
 
         FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(file);
         List<Task> history = loadedManager.getHistory();
