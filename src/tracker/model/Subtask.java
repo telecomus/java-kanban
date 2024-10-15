@@ -1,5 +1,5 @@
-
 package tracker.model;
+
 public class Subtask extends Task {
 
     private final int epicID;
@@ -20,12 +20,19 @@ public class Subtask extends Task {
 
     @Override
     public String toString() {
-        return "Subtask{" +
-                "name='" + getName() + '\'' +
-                ", description='" + getDescription() + '\'' +
-                ", id=" + getId() +
-                ", epicID=" + epicID +
-                ", status=" + getStatus() +
-                '}';
+        return getId() + "," + TaskType.SUBTASK + "," + getName() + "," + getStatus() + "," + getDescription() + "," + epicID;
+    }
+
+    public static Subtask fromString(String value) {
+        String[] fields = value.split(",");
+        int id = Integer.parseInt(fields[0]);
+        String name = fields[2];
+        Status status = Status.valueOf(fields[3]);
+        String description = fields[4];
+        int epicID = Integer.parseInt(fields[5]);
+        Subtask subtask = new Subtask(name, description, epicID);
+        subtask.setId(id);
+        subtask.setStatus(status);
+        return subtask;
     }
 }
