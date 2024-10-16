@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import tracker.model.Task;
 import java.util.List;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("HistoryManager Tests")
@@ -20,7 +22,8 @@ class HistoryManagerTest {
     @Test
     @DisplayName("Add task to history")
     void testAddTaskToHistory() {
-        Task task = new Task("Task", "Description");
+        LocalDateTime now = LocalDateTime.now();
+        Task task = new Task("Task", "Description", Duration.ofHours(1), now);
         task.setId(1);
         historyManager.add(task);
         List<Task> history = historyManager.getHistory();
@@ -31,7 +34,8 @@ class HistoryManagerTest {
     @Test
     @DisplayName("Remove duplicates from history")
     void testRemoveDuplicatesFromHistory() {
-        Task task = new Task("Task", "Description");
+        LocalDateTime now = LocalDateTime.now();
+        Task task = new Task("Task", "Description", Duration.ofHours(1), now);
         task.setId(1);
         historyManager.add(task);
         historyManager.add(task);
@@ -42,8 +46,9 @@ class HistoryManagerTest {
     @Test
     @DisplayName("Remove task from history")
     void testRemoveTaskFromHistory() {
-        Task task1 = new Task("Task 1", "Description 1");
-        Task task2 = new Task("Task 2", "Description 2");
+        LocalDateTime now = LocalDateTime.now();
+        Task task1 = new Task("Task 1", "Description 1", Duration.ofHours(1), now);
+        Task task2 = new Task("Task 2", "Description 2", Duration.ofHours(2), now.plusHours(2));
         task1.setId(1);
         task2.setId(2);
         historyManager.add(task1);
@@ -57,9 +62,10 @@ class HistoryManagerTest {
     @Test
     @DisplayName("Order of tasks in history")
     void testHistoryOrder() {
-        Task task1 = new Task("Task 1", "Description 1");
-        Task task2 = new Task("Task 2", "Description 2");
-        Task task3 = new Task("Task 3", "Description 3");
+        LocalDateTime now = LocalDateTime.now();
+        Task task1 = new Task("Task 1", "Description 1", Duration.ofHours(1), now);
+        Task task2 = new Task("Task 2", "Description 2", Duration.ofHours(2), now.plusHours(2));
+        Task task3 = new Task("Task 3", "Description 3", Duration.ofHours(3), now.plusHours(4));
         task1.setId(1);
         task2.setId(2);
         task3.setId(3);

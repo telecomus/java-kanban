@@ -6,6 +6,9 @@ import tracker.controllers.TaskManager;
 import tracker.controllers.Managers;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+
 @DisplayName("Тесты для класса Epic")
 class EpicTest {
 
@@ -24,8 +27,10 @@ class EpicTest {
         Epic epic = new Epic("Epic", "Description");
         Epic addedEpic = taskManager.addEpic(epic);
 
-        Subtask subtask1 = new Subtask("Subtask 1", "Description 1", addedEpic.getId());
-        Subtask subtask2 = new Subtask("Subtask 2", "Description 2", addedEpic.getId());
+        LocalDateTime startTime1 = LocalDateTime.now();
+        LocalDateTime startTime2 = startTime1.plusHours(2);
+        Subtask subtask1 = new Subtask("Subtask 1", "Description 1", addedEpic.getId(), Duration.ofHours(1), startTime1);
+        Subtask subtask2 = new Subtask("Subtask 2", "Description 2", addedEpic.getId(), Duration.ofHours(1), startTime2);
 
         taskManager.addSubtask(subtask1);
         taskManager.addSubtask(subtask2);
@@ -44,13 +49,15 @@ class EpicTest {
 
         assertEquals(Status.NEW, addedEpic.getStatus(), "Epic status should be NEW by default");
 
-        Subtask subtask1 = new Subtask("Subtask 1", "Description 1", addedEpic.getId());
+        LocalDateTime startTime1 = LocalDateTime.now();
+        Subtask subtask1 = new Subtask("Subtask 1", "Description 1", addedEpic.getId(), Duration.ofHours(1), startTime1);
         subtask1.setStatus(Status.IN_PROGRESS);
         taskManager.addSubtask(subtask1);
 
         assertEquals(Status.IN_PROGRESS, taskManager.getEpicByID(addedEpic.getId()).getStatus(), "Epic status should be IN_PROGRESS if any subtask is IN_PROGRESS");
 
-        Subtask subtask2 = new Subtask("Subtask 2", "Description 2", addedEpic.getId());
+        LocalDateTime startTime2 = startTime1.plusHours(2);
+        Subtask subtask2 = new Subtask("Subtask 2", "Description 2", addedEpic.getId(), Duration.ofHours(1), startTime2);
         subtask2.setStatus(Status.DONE);
         taskManager.addSubtask(subtask2);
 
@@ -60,5 +67,26 @@ class EpicTest {
         taskManager.updateSubtask(subtask1);
 
         assertEquals(Status.DONE, taskManager.getEpicByID(addedEpic.getId()).getStatus(), "Epic status should be DONE if all subtasks are DONE");
+    }
+
+    @Test
+    @DisplayName("Расчет продолжительности и времени эпика")
+    void testEpicDurationAndTime() {
+        TaskManager taskManager = Managers.getDefault();
+        Epic epic = new Epic("Epic", "Description");
+        Epic addedEpic = taskManager.addEpic(epic);
+
+        LocalDateTime startTime1 = LocalDateTime.now();
+        LocalDateTime startTime2 = startTime1.plusHours(2);
+        Subtask subtask1 = new Subtask("Subtask 1", "Description 1", addedEpic.getId(), Duration.ofHours(1), startTime1);
+        Subtask subtask2 = new Subtask("Subtask 2", "Description 2", addedEpic.getId(), Duration.ofHours(1), startTime2);
+
+        taskManager.addSubtask(subtask1);
+        taskManager.addSubtask(subtask2);
+
+        Epic updatedEpic = taskManager.getEpicByID(addedEpic.getId());
+        assertEquals(Duration.ofHours(2), updatedEpic.getDuration(), "Epic duration should be sum of subtasks durations");
+        assertEquals(startTime1, updatedEpic.getStartTime(), "Epic start time should be the earliest subtask start time");
+        assertEquals(startTime2.plusHours(1), updatedEpic.getEndTime(), "Epic end time should be the latest subtask end time");
     }
 }
