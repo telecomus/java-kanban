@@ -9,11 +9,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-@DisplayName("Тесты для класса Task")
+@DisplayName("Tests for the Task class")
 class TaskTest {
 
     @Test
-    @DisplayName("Равенство задач")
+    @DisplayName("Equality of tasks")
     void testTaskEquality() {
         LocalDateTime startTime = LocalDateTime.now();
         Duration duration = Duration.ofHours(2);
@@ -23,7 +23,7 @@ class TaskTest {
     }
 
     @Test
-    @DisplayName("Неизменяемость задачи после добавления в менеджер")
+    @DisplayName("Task immutability after adding to manager")
     void testTaskImmutabilityAfterAddingToManager() {
         TaskManager taskManager = Managers.getDefault();
         LocalDateTime startTime = LocalDateTime.now();
@@ -45,7 +45,7 @@ class TaskTest {
     }
 
     @Test
-    @DisplayName("Проверка расчета времени окончания задачи")
+    @DisplayName("Checking the calculation of the task completion time")
     void testTaskEndTime() {
         LocalDateTime startTime = LocalDateTime.now();
         Duration duration = Duration.ofHours(2);

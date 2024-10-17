@@ -53,7 +53,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
             Files.writeString(file.toPath(), csv.toString());
         } catch (IOException e) {
-            throw new ManagerSaveException("Ошибка сохранения данных в файл", e);
+            throw new ManagerSaveException("Error saving data to file", e);
         }
     }
 
@@ -120,7 +120,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                         .forEach(manager.historyManager::add);
             }
         } catch (IOException e) {
-            throw new ManagerSaveException("Ошибка загрузки данных из файла", e);
+            throw new ManagerSaveException("Error loading data from file", e);
         }
         return manager;
     }
@@ -138,7 +138,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         try {
             startTime = parts[6].isEmpty() ? null : LocalDateTime.parse(parts[6], DATE_TIME_FORMATTER);
         } catch (DateTimeParseException e) {
-            System.err.println("Ошибка парсинга даты и времени: " + parts[6]);
+            System.err.println("Date and time parsing error: " + parts[6]);
         }
 
         switch (parts[1]) {
@@ -181,7 +181,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             boolean hasIntersection = prioritizedTasks.stream()
                     .anyMatch(t -> isIntersect(task, t));
             if (hasIntersection) {
-                throw new IllegalArgumentException("Задача пересекается по времени с другой задачей");
+                throw new IllegalArgumentException("The task overlaps in time with another task");
             }
         }
         Task added = super.addTask(task);
@@ -196,7 +196,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             boolean hasIntersection = prioritizedTasks.stream()
                     .anyMatch(t -> isIntersect(epic, t));
             if (hasIntersection) {
-                throw new IllegalArgumentException("Эпик пересекается по времени с другой задачей");
+                throw new IllegalArgumentException("Epic overlaps in time with another task");
             }
         }
         Epic added = super.addEpic(epic);
@@ -211,7 +211,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             boolean hasIntersection = prioritizedTasks.stream()
                     .anyMatch(t -> isIntersect(subtask, t));
             if (hasIntersection) {
-                throw new IllegalArgumentException("Подзадача пересекается по времени с другой задачей");
+                throw new IllegalArgumentException("The subtask overlaps in time with another task");
             }
         }
         Subtask added = super.addSubtask(subtask);
@@ -227,7 +227,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                     .filter(t -> t.getId() != task.getId())
                     .anyMatch(t -> isIntersect(task, t));
             if (hasIntersection) {
-                throw new IllegalArgumentException("Задача пересекается по времени с другой задачей");
+                throw new IllegalArgumentException("The task overlaps in time with another task");
             }
         }
         Task updated = super.updateTask(task);
@@ -243,7 +243,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                     .filter(t -> t.getId() != epic.getId())
                     .anyMatch(t -> isIntersect(epic, t));
             if (hasIntersection) {
-                throw new IllegalArgumentException("Эпик пересекается по времени с другой задачей");
+                throw new IllegalArgumentException("Epic overlaps in time with another task");
             }
         }
         Epic updated = super.updateEpic(epic);
@@ -259,7 +259,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                     .filter(t -> t.getId() != subtask.getId())
                     .anyMatch(t -> isIntersect(subtask, t));
             if (hasIntersection) {
-                throw new IllegalArgumentException("Подзадача пересекается по времени с другой задачей");
+                throw new IllegalArgumentException("The subtask overlaps in time with another task");
             }
         }
         Subtask updated = super.updateSubtask(subtask);
@@ -309,5 +309,14 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     @Override
     public List<Task> getPrioritizedTasks() {
         return super.getPrioritizedTasks();
+    }
+
+    protected boolean isIntersect(Task task1, Task task2) {
+        if (task1.getStartTime() == null || task1.getEndTime() == null ||
+                task2.getStartTime() == null || task2.getEndTime() == null) {
+            return false;
+        }
+        return task1.getStartTime().isBefore(task2.getEndTime()) &&
+                task2.getStartTime().isBefore(task1.getEndTime());
     }
 }

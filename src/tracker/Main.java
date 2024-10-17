@@ -64,10 +64,10 @@ public class Main {
         System.out.println("Продолжительность: " + task.getDuration().toHours() + " часов");
         System.out.println("Время начала: " + task.getStartTime());
         System.out.println("Время окончания: " + task.getEndTime());
-        if (task instanceof Epic) {
-            Epic epic = (Epic) task;
+        if (task instanceof Epic epic) {
             System.out.println("Количество подзадач: " + epic.getSubtaskList().size());
         }
         System.out.println();
     }
+
 }

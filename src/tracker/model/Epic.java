@@ -9,11 +9,11 @@ public class Epic extends Task {
     private LocalDateTime endTime;
 
     public Epic(String name, String description) {
-        super(name, description, null, null);
+        super(name, description, Duration.ZERO, null);
     }
 
     public Epic(int id, String name, String description) {
-        super(id, name, description, Status.NEW, null, null);
+        super(id, name, description, Status.NEW, Duration.ZERO, null);
     }
 
     public void addSubtask(Subtask subtask) {
@@ -48,16 +48,20 @@ public class Epic extends Task {
             return;
         }
 
-        LocalDateTime earliestStart = subtaskList.get(0).getStartTime();
-        LocalDateTime latestEnd = subtaskList.get(0).getEndTime();
+        LocalDateTime earliestStart = null;
+        LocalDateTime latestEnd = null;
         Duration totalDuration = Duration.ZERO;
 
         for (Subtask subtask : subtaskList) {
-            if (subtask.getStartTime() != null && (earliestStart == null || subtask.getStartTime().isBefore(earliestStart))) {
-                earliestStart = subtask.getStartTime();
+            if (subtask.getStartTime() != null) {
+                if (earliestStart == null || subtask.getStartTime().isBefore(earliestStart)) {
+                    earliestStart = subtask.getStartTime();
+                }
             }
-            if (subtask.getEndTime() != null && (latestEnd == null || subtask.getEndTime().isAfter(latestEnd))) {
-                latestEnd = subtask.getEndTime();
+            if (subtask.getEndTime() != null) {
+                if (latestEnd == null || subtask.getEndTime().isAfter(latestEnd)) {
+                    latestEnd = subtask.getEndTime();
+                }
             }
             if (subtask.getDuration() != null) {
                 totalDuration = totalDuration.plus(subtask.getDuration());
@@ -77,7 +81,7 @@ public class Epic extends Task {
     @Override
     public String toString() {
         return getId() + "," + TaskType.EPIC + "," + getName() + "," + getStatus() + "," + getDescription() + ","
-                + (getDuration() != null ? getDuration().toMinutes() : "") + ","
+                + getDuration().toMinutes() + ","
                 + (getStartTime() != null ? getStartTime().toString() : "") + ","
                 + (endTime != null ? endTime.toString() : "");
     }
