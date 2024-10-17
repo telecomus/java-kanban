@@ -162,28 +162,28 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void deleteEpics() {
-        for (Epic epic : epics.values()) {
+        epics.values().forEach(epic -> {
             historyManager.remove(epic.getId());
-            for (Subtask subtask : epic.getSubtaskList()) {
+            epic.getSubtaskList().forEach(subtask -> {
                 historyManager.remove(subtask.getId());
                 prioritizedTasks.remove(subtask);
-            }
-        }
+            });
+        });
         epics.clear();
         subtasks.clear();
     }
 
     @Override
     public void deleteSubtasks() {
-        for (Subtask subtask : subtasks.values()) {
+        subtasks.values().forEach(subtask -> {
             historyManager.remove(subtask.getId());
             prioritizedTasks.remove(subtask);
-        }
+        });
         subtasks.clear();
-        for (Epic epic : epics.values()) {
+        epics.values().forEach(epic -> {
             epic.clearSubtasks();
             updateEpicStatus(epic);
-        }
+        });
     }
 
     @Override
@@ -238,27 +238,12 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     private void updateEpicStatus(Epic epic) {
-        ArrayList<Subtask> subtasks = epic.getSubtaskList();
+        List<Subtask> subtasks = epic.getSubtaskList();
         if (subtasks.isEmpty()) {
             epic.setStatus(Status.NEW);
-            return;
-        }
-
-        boolean allNew = true;
-        boolean allDone = true;
-
-        for (Subtask subtask : subtasks) {
-            if (subtask.getStatus() != Status.NEW) {
-                allNew = false;
-            }
-            if (subtask.getStatus() != Status.DONE) {
-                allDone = false;
-            }
-        }
-
-        if (allNew) {
+        } else if (subtasks.stream().allMatch(subtask -> subtask.getStatus() == Status.NEW)) {
             epic.setStatus(Status.NEW);
-        } else if (allDone) {
+        } else if (subtasks.stream().allMatch(subtask -> subtask.getStatus() == Status.DONE)) {
             epic.setStatus(Status.DONE);
         } else {
             epic.setStatus(Status.IN_PROGRESS);

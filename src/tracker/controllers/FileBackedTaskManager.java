@@ -14,7 +14,10 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FileBackedTaskManager extends InMemoryTaskManager {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
@@ -44,7 +47,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             }
 
             csv.append("\n");
-            for (Task task : getHistory()) {
+            for (Task task : historyManager.getHistory()) {
                 csv.append(task.getId()).append(",");
             }
 
@@ -77,49 +80,50 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             String csv = Files.readString(file.toPath());
             String[] lines = csv.split("\n");
 
-            boolean isHistory = false;
-            for (int i = 1; i < lines.length; i++) {
-                String line = lines[i].trim();
-                if (line.isEmpty()) {
-                    isHistory = true;
-                    continue;
-                }
-                if (!isHistory) {
-                    Task task = fromString(line);
-                    if (task != null) {
-                        if (task instanceof Epic) {
-                            manager.epics.put(task.getId(), (Epic) task);
-                        } else if (task instanceof Subtask) {
-                            Subtask subtask = (Subtask) task;
-                            manager.subtasks.put(subtask.getId(), subtask);
-                            Epic epic = manager.epics.get(subtask.getEpicID());
-                            if (epic != null) {
-                                epic.addSubtask(subtask);
-                            }
-                        } else {
-                            manager.tasks.put(task.getId(), task);
-                        }
-                        manager.addToPrioritizedTasks(task);
-                    }
-                } else {
-                    String[] ids = line.split(",");
-                    for (String id : ids) {
-                        if (!id.isEmpty()) {
-                            int taskId = Integer.parseInt(id);
-                            Task task = manager.findTaskById(taskId);
+            AtomicBoolean isHistory = new AtomicBoolean(false);
+            Arrays.stream(lines)
+                    .skip(1)
+                    .map(String::trim)
+                    .forEach(line -> {
+                        if (line.isEmpty()) {
+                            isHistory.set(true);
+                        } else if (!isHistory.get()) {
+                            Task task = fromString(line);
                             if (task != null) {
-                                manager.historyManager.add(task);
+                                if (task instanceof Epic) {
+                                    manager.epics.put(task.getId(), (Epic) task);
+                                } else if (task instanceof Subtask) {
+                                    Subtask subtask = (Subtask) task;
+                                    manager.subtasks.put(subtask.getId(), subtask);
+                                    manager.epics.computeIfPresent(subtask.getEpicID(), (id, epic) -> {
+                                        epic.addSubtask(subtask);
+                                        return epic;
+                                    });
+                                } else {
+                                    manager.tasks.put(task.getId(), task);
+                                }
+                                manager.addToPrioritizedTasks(task);
                             }
                         }
-                    }
-                }
+                    });
+
+            if (isHistory.get()) {
+                String historyLine = Arrays.stream(lines)
+                        .filter(line -> !line.isEmpty())
+                        .reduce((first, second) -> second)
+                        .orElse("");
+                Arrays.stream(historyLine.split(","))
+                        .filter(id -> !id.isEmpty())
+                        .map(Integer::parseInt)
+                        .map(manager::findTaskById)
+                        .filter(Objects::nonNull)
+                        .forEach(manager.historyManager::add);
             }
         } catch (IOException e) {
             throw new ManagerSaveException("Ошибка загрузки данных из файла", e);
         }
         return manager;
     }
-
     private static Task fromString(String value) {
         String[] parts = value.split(",");
         if (parts.length < 7) {
