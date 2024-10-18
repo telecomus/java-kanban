@@ -37,13 +37,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public Task addTask(Task task) {
-        if (task.getStartTime() != null) {
-            for (Task existingTask : prioritizedTasks) {
-                if (isIntersect(task, existingTask)) {
-                    throw new IllegalArgumentException("The task overlaps in time with another task");
-                }
-            }
-        }
+        checkTaskIntersection(task);
         task.setId(getNextID());
         tasks.put(task.getId(), task);
         addToPrioritizedTasks(task);
@@ -52,6 +46,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public Epic addEpic(Epic epic) {
+        checkTaskIntersection(epic);
         epic.setId(getNextID());
         epics.put(epic.getId(), epic);
         return epic;
@@ -59,19 +54,15 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public Subtask addSubtask(Subtask subtask) {
-        if (subtask.getStartTime() != null) {
-            for (Task existingTask : prioritizedTasks) {
-                if (isIntersect(subtask, existingTask)) {
-                    throw new IllegalArgumentException("The subtask overlaps in time with another task");
-                }
-            }
-        }
-        subtask.setId(getNextID());
         Epic epic = epics.get(subtask.getEpicID());
-        if (epic != null) {
-            epic.addSubtask(subtask);
-            updateEpicStatus(epic);
+        if (epic == null) {
+            return null;  // или пробросить исключение
         }
+
+        checkTaskIntersection(subtask);
+        subtask.setId(getNextID());
+        epic.addSubtask(subtask);
+        updateEpicStatus(epic);
         subtasks.put(subtask.getId(), subtask);
         addToPrioritizedTasks(subtask);
         return subtask;
@@ -80,13 +71,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public Task updateTask(Task task) {
         if (tasks.containsKey(task.getId())) {
-            if (task.getStartTime() != null) {
-                for (Task existingTask : prioritizedTasks) {
-                    if (existingTask.getId() != task.getId() && isIntersect(task, existingTask)) {
-                        throw new IllegalArgumentException("The task overlaps in time with another task");
-                    }
-                }
-            }
+            checkTaskIntersection(task);
             prioritizedTasks.remove(tasks.get(task.getId()));
             tasks.put(task.getId(), task);
             addToPrioritizedTasks(task);
@@ -98,6 +83,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public Epic updateEpic(Epic epic) {
         if (epics.containsKey(epic.getId())) {
+            checkTaskIntersection(epic);
             Epic oldEpic = epics.get(epic.getId());
             epic.setSubtaskList(oldEpic.getSubtaskList());
             epics.put(epic.getId(), epic);
@@ -109,22 +95,18 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public Subtask updateSubtask(Subtask subtask) {
+        Epic epic = epics.get(subtask.getEpicID());
+        if (epic == null) {
+            return null;
+        }
+
         if (subtasks.containsKey(subtask.getId())) {
-            if (subtask.getStartTime() != null) {
-                for (Task existingTask : prioritizedTasks) {
-                    if (existingTask.getId() != subtask.getId() && isIntersect(subtask, existingTask)) {
-                        throw new IllegalArgumentException("The subtask overlaps in time with another task");
-                    }
-                }
-            }
+            checkTaskIntersection(subtask);
             Subtask oldSubtask = subtasks.get(subtask.getId());
             prioritizedTasks.remove(oldSubtask);
-            Epic epic = epics.get(oldSubtask.getEpicID());
-            if (epic != null) {
-                epic.removeSubtask(oldSubtask);
-                epic.addSubtask(subtask);
-                updateEpicStatus(epic);
-            }
+            epic.removeSubtask(oldSubtask);
+            epic.addSubtask(subtask);
+            updateEpicStatus(epic);
             subtasks.put(subtask.getId(), subtask);
             addToPrioritizedTasks(subtask);
             return subtask;
@@ -160,22 +142,22 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public ArrayList<Task> getTasks() {
+    public List<Task> getTasks() {
         return new ArrayList<>(tasks.values());
     }
 
     @Override
-    public ArrayList<Epic> getEpics() {
+    public List<Epic> getEpics() {
         return new ArrayList<>(epics.values());
     }
 
     @Override
-    public ArrayList<Subtask> getSubtasks() {
+    public List<Subtask> getSubtasks() {
         return new ArrayList<>(subtasks.values());
     }
 
     @Override
-    public ArrayList<Subtask> getEpicSubtasks(Epic epic) {
+    public List<Subtask> getEpicSubtasks(Epic epic) {
         return epic.getSubtaskList();
     }
 
@@ -281,6 +263,17 @@ public class InMemoryTaskManager implements TaskManager {
     protected void addToPrioritizedTasks(Task task) {
         if (task.getStartTime() != null) {
             prioritizedTasks.add(task);
+        }
+    }
+
+    private void checkTaskIntersection(Task task) {
+        if (task.getStartTime() != null) {
+            for (Task existingTask : prioritizedTasks) {
+                if (existingTask.getId() != task.getId() && isIntersect(task, existingTask)) {
+                    String taskType = task instanceof Epic ? "epic" : task instanceof Subtask ? "subtask" : "task";
+                    throw new IllegalArgumentException("The " + taskType + " overlaps in time with another task");
+                }
+            }
         }
     }
 
