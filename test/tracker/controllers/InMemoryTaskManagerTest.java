@@ -1,71 +1,99 @@
 package tracker.controllers;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import tracker.model.Epic;
 import tracker.model.Status;
 import tracker.model.Subtask;
 import tracker.model.Task;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("Менеджер задач в памяти")
-class InMemoryTaskManagerTest {
+@DisplayName("InMemoryTaskManager Tests")
+class InMemoryTaskManagerTest extends TaskManagerTest<InMemoryTaskManager> {
 
-    private TaskManager taskManager;
-
-    @BeforeEach
-    void setUp() {
-        taskManager = Managers.getDefault();
+    @Override
+    protected InMemoryTaskManager createTaskManager() {
+        return new InMemoryTaskManager(Managers.getDefaultHistory());
     }
 
     @Test
-    @DisplayName("Добавление задачи")
-    void testAddTask() {
-        Task task = new Task("Task", "Description");
-        Task addedTask = taskManager.addTask(task);
-        assertNotNull(addedTask.getId(), "Task id should be generated");
-        assertEquals(task, taskManager.getTaskByID(addedTask.getId()), "Added task should be retrievable by id");
+    @DisplayName("Data integrity on deletion")
+    void testDataIntegrityOnDeletion() {
+        Epic epic = taskManager.addEpic(new Epic("Epic", "Description"));
+        LocalDateTime now = LocalDateTime.now();
+        Subtask subtask = taskManager.addSubtask(new Subtask("Subtask", "Description", epic.getId(), Duration.ofMinutes(30), now));
+        taskManager.deleteSubtaskByID(subtask.getId());
+        assertFalse(taskManager.getEpicByID(epic.getId()).getSubtaskList().contains(subtask),
+                "Subtask should be removed from epic's subtask list");
     }
 
     @Test
-    @DisplayName("Добавление эпика")
-    void testAddEpic() {
-        Epic epic = new Epic("Epic", "Description");
-        Epic addedEpic = taskManager.addEpic(epic);
-        assertNotNull(addedEpic.getId(), "Epic id should be generated");
-        assertEquals(epic, taskManager.getEpicByID(addedEpic.getId()), "Added epic should be retrievable by id");
+    @DisplayName("Prioritized tasks")
+    void testPrioritizedTasks() {
+        LocalDateTime now = LocalDateTime.now();
+
+        // Задачи без пересечений по времени
+        Task task1 = taskManager.addTask(new Task("Task 1", "Description 1", Duration.ofHours(1), now.plusHours(1)));
+        Task task2 = taskManager.addTask(new Task("Task 2", "Description 2", Duration.ofHours(1), now.plusHours(2)));
+        Task task3 = taskManager.addTask(new Task("Task 3", "Description 3", Duration.ofHours(1), now));
+
+        // Эпик и подзадача, не пересекающаяся с другими задачами
+        Epic epic = taskManager.addEpic(new Epic("Epic", "Description"));
+        Subtask subtask1 = taskManager.addSubtask(
+                new Subtask("Subtask 1", "Description", epic.getId(), Duration.ofHours(1), now.plusHours(3))
+        );
+
+        Task taskWithoutStartTime = taskManager.addTask(
+                new Task("Task 4", "Description 4", Duration.ofHours(1), null)
+        );
+
+        List<Task> prioritizedTasks = taskManager.getPrioritizedTasks();
+
+        assertEquals(4, prioritizedTasks.size(), "Prioritized tasks should contain 4 tasks");
+        assertEquals(task3, prioritizedTasks.get(0), "Task 3 should be first");
+        assertEquals(task1, prioritizedTasks.get(1), "Task 1 should be second");
+        assertEquals(task2, prioritizedTasks.get(2), "Task 2 should be third");
+        assertEquals(subtask1, prioritizedTasks.get(3), "Subtask 1 should be fourth");
+        assertFalse(prioritizedTasks.contains(taskWithoutStartTime), "Task without start time should not be in prioritized list");
     }
 
     @Test
-    @DisplayName("Добавление подзадачи")
-    void testAddSubtask() {
-        Epic epic = new Epic("Epic", "Description");
-        Epic addedEpic = taskManager.addEpic(epic);
-        Subtask subtask = new Subtask("Subtask", "Description", addedEpic.getId());
-        Subtask addedSubtask = taskManager.addSubtask(subtask);
-        assertNotNull(addedSubtask.getId(), "Subtask id should be generated");
-        assertEquals(subtask, taskManager.getSubtaskByID(addedSubtask.getId()), "Added subtask should be retrievable by id");
+    @DisplayName("Epic time calculation")
+    void testEpicTimeCalculation() {
+        LocalDateTime now = LocalDateTime.now();
+        Epic epic = taskManager.addEpic(new Epic("Epic", "Description"));
+        Subtask subtask1 = taskManager.addSubtask(new Subtask("Subtask 1", "Description", epic.getId(), Duration.ofHours(1), now));
+        Subtask subtask2 = taskManager.addSubtask(new Subtask("Subtask 2", "Description", epic.getId(), Duration.ofHours(2), now.plusHours(2)));
+
+        Epic updatedEpic = taskManager.getEpicByID(epic.getId());
+        assertEquals(now, updatedEpic.getStartTime(), "Epic start time should be the earliest subtask start time");
+        assertEquals(Duration.ofHours(3), updatedEpic.getDuration(), "Epic duration should be sum of subtasks durations");
+        assertEquals(now.plusHours(4), updatedEpic.getEndTime(), "Epic end time should be the latest subtask end time");
     }
 
     @Test
-    @DisplayName("Задача с назначенным ID")
-    void testTaskWithAssignedId() {
-        Task task = new Task(1, "Task", "Description", Status.NEW);
-        Task addedTask = taskManager.addTask(task);
-        assertEquals(1, addedTask.getId(), "Task should retain the assigned id");
-        assertEquals(task, taskManager.getTaskByID(1), "Task with assigned id should be retrievable");
-    }
+    @DisplayName("Epic status update")
+    void testEpicStatusUpdate() {
+        Epic epic = taskManager.addEpic(new Epic("Epic", "Description"));
+        LocalDateTime now = LocalDateTime.now();
+        Subtask subtask1 = taskManager.addSubtask(new Subtask("Subtask 1", "Description", epic.getId(), Duration.ofHours(1), now));
+        Subtask subtask2 = taskManager.addSubtask(new Subtask("Subtask 2", "Description", epic.getId(), Duration.ofHours(1), now.plusHours(2)));
 
-    @Test
-    @DisplayName("Утилитный класс Managers")
-    void testManagersUtilityClass() {
-        TaskManager defaultManager = Managers.getDefault();
-        assertNotNull(defaultManager, "Default task manager should be initialized");
-        assertTrue(defaultManager instanceof InMemoryTaskManager, "Default task manager should be an instance of InMemoryTaskManager");
+        assertEquals(Status.NEW, taskManager.getEpicByID(epic.getId()).getStatus(), "Epic status should be NEW");
 
-        HistoryManager defaultHistory = Managers.getDefaultHistory();
-        assertNotNull(defaultHistory, "Default history manager should be initialized");
-        assertTrue(defaultHistory instanceof InMemoryHistoryManager, "Default history manager should be an instance of InMemoryHistoryManager");
+        subtask1.setStatus(Status.IN_PROGRESS);
+        taskManager.updateSubtask(subtask1);
+        assertEquals(Status.IN_PROGRESS, taskManager.getEpicByID(epic.getId()).getStatus(), "Epic status should be IN_PROGRESS");
+
+        subtask1.setStatus(Status.DONE);
+        subtask2.setStatus(Status.DONE);
+        taskManager.updateSubtask(subtask1);
+        taskManager.updateSubtask(subtask2);
+        assertEquals(Status.DONE, taskManager.getEpicByID(epic.getId()).getStatus(), "Epic status should be DONE");
     }
 }
